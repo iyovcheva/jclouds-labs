@@ -73,6 +73,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.base.Supplier;
+import com.google.common.base.Predicates;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -179,8 +180,15 @@ public class VirtualMachineToNodeMetadata implements Function<VirtualMachine, No
       Credentials credentials = credentialStore.get("node#" + virtualMachine.name());
       builder.credentials(LoginCredentials.fromCredentials(credentials));
 
-      builder.publicAddresses(getPublicIpAddresses(virtualMachine.properties().networkProfile().networkInterfaces()));
-      builder.privateAddresses(getPrivateIpAddresses(virtualMachine.properties().networkProfile().networkInterfaces()));
+      Iterable<String> publicIpAddresses = getPublicIpAddresses(virtualMachine.properties().networkProfile().networkInterfaces());
+      Iterable<String> privateIpAddresses = getPrivateIpAddresses(virtualMachine.properties().networkProfile().networkInterfaces());
+
+      if (!Iterables.all(publicIpAddresses, Predicates.<String>isNull())) {
+         builder.publicAddresses(publicIpAddresses);
+      }
+      if (!Iterables.all(privateIpAddresses, Predicates.<String>isNull())) {
+         builder.privateAddresses(privateIpAddresses);
+      }
 
       String groupFromMetadata = null;
       if (virtualMachine.tags() != null) {
